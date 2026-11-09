@@ -47,6 +47,19 @@ h1{font-size:clamp(1.5rem,4vw,2rem);line-height:1.25;margin:.12rem 0 .3rem;lette
 .backup-panel h2{font-size:1.2rem;margin:0}
 .backup-panel textarea{resize:vertical;min-height:5rem;font: .82rem/1.5 ui-monospace,monospace;overflow-wrap:anywhere}
 .backup-panel .controls{margin-top:.65rem}
+.navigator-panel{width:min(640px,calc(100% - 1.25rem));max-height:calc(100dvh - 1.25rem);overflow:auto;padding:clamp(.9rem,3vw,1.5rem)}
+.navigator-panel h2{margin:0}
+.navigator-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.6rem}
+.navigator-panel .controls{margin-top:.65rem}
+.navigator-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(2.75rem,1fr));gap:.5rem;margin:.9rem 0}
+.number-tile{min-width:0;min-height:2.75rem;border:1px solid #a8b7c6;background:#fff;color:#273d56;border-radius:.7rem;font:700 .9rem/1 system-ui,sans-serif;font-variant-numeric:tabular-nums;cursor:pointer}
+.number-tile:hover{box-shadow:inset 0 0 0 1px currentColor}
+.number-tile[data-state="correct"],.navigator-legend .correct{background:#d9f2e2;color:#135b36;border-color:#72ae89}
+.number-tile[data-state="wrong"],.navigator-legend .wrong{background:#ffe3df;color:#8b2c26;border-color:#d6968f}
+.number-tile[aria-current="true"]{outline:2px solid var(--accent);outline-offset:2px}
+.navigator-legend{display:flex;gap:.4rem;flex-wrap:wrap;margin:.65rem 0 0;font-size:.8rem}
+.navigator-legend span{border:1px solid #a8b7c6;padding:.15rem .5rem;border-radius:999px;background:#fff}
+@media(max-width:530px){.navigator-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
 </style>
 <script>
 window.ogBank = {
@@ -6320,7 +6333,7 @@ window.ogBank = {
 <section id="og" hidden>
   <div class="overview"><div><span class="kicker">MED4011 · OBSTETRICS &amp; GYNAECOLOGY</span><h1>OG 原创模拟题</h1><p id="subtitle" class="muted"></p></div>
   <div><div class="meter" aria-hidden="true"><i id="bar"></i></div><div id="stats" class="stats"></div></div></div>
-  <div class="toolbar"><div id="formats" class="controls" aria-label="题型"></div><div class="controls"><button id="wrong" class="button" aria-pressed="false">错题本</button><button id="backup" class="button">备份与恢复</button><button id="mock" class="button primary">开始 25 MCQ + 15 EMQ</button></div></div>
+  <div class="toolbar"><div id="formats" class="controls" aria-label="题型"></div><div class="controls"><button id="wrong" class="button" aria-pressed="false">错题本</button><button id="navigator" class="button" type="button" aria-haspopup="dialog">题号导航</button><button id="backup" class="button">备份与恢复</button><button id="mock" class="button primary">开始 25 MCQ + 15 EMQ</button></div></div>
   <div class="layout">
     <aside class="side" id="side"><h2>课件专题</h2><nav id="topics" class="topics" aria-label="课件专题"></nav></aside>
     <div class="stage">
@@ -6343,6 +6356,22 @@ window.ogBank = {
     <li>Ten Teachers 的出版社章节目录用于对照主题覆盖。<a href="https://www.routledge.com/Obstetrics-by-Ten-Teachers/McCarthy-Kenny/p/book/9781032051161" target="_blank" rel="noopener">Obstetrics</a> · <a href="https://www.routledge.com/Gynaecology-by-Ten-Teachers/Crosbie-Morgan/p/book/9781032458045" target="_blank" rel="noopener">Gynaecology</a></li>
   </ul></details>
 </section>
+<dialog id="navigatorDialog" class="card backup-panel navigator-panel" aria-labelledby="navigatorTitle">
+  <div class="navigator-top">
+    <div><span class="kicker">OG QUESTION MAP</span><h2 id="navigatorTitle">题号导航</h2></div>
+    <form method="dialog"><button class="button">关闭</button></form>
+  </div>
+  <div class="controls" role="group" aria-label="刷题顺序">
+    <button id="orderSequential" class="button" type="button" aria-pressed="true">按题号顺序</button>
+    <button id="orderRandom" class="button" type="button" aria-pressed="false">乱序刷题</button>
+    <button id="navigatorStart" class="button primary" type="button">开始刷题</button>
+  </div>
+  <p id="navigatorHint" class="small muted" aria-live="polite"></p>
+  <div class="navigator-legend" aria-label="答题状态">
+    <span class="correct" id="navigatorCorrect"></span><span class="wrong" id="navigatorWrong"></span><span id="navigatorUnanswered"></span>
+  </div>
+  <div id="navigatorGrid" class="navigator-grid" role="group" aria-label="点击题号跳转"></div>
+</dialog>
 <dialog id="backupDialog" class="card backup-panel" aria-labelledby="backupTitle">
   <h2 id="backupTitle">备份与恢复</h2>
   <p class="muted small">备份码包含 OG 的作答、错题和当前模拟卷。把码带到另一台设备，验证进入 OG 后即可恢复。</p>
@@ -6380,6 +6409,7 @@ let subject = 'og';
 let format = 'all';
 let topic = 'all';
 let wrongOnly = false;
+const randomRoutes = new Map();
 let index = 0;
 let mock = null;
 let showing = [];
@@ -6475,9 +6505,12 @@ function eligible(q) {
   return (format === 'all' || q.format === format) &&
     (!wrongOnly || retry.has(q.id) || (Object.hasOwn(history, q.id) && history[q.id] !== q.answer));
 }
+function questionsInTopic(name = topic) {
+  return name === 'all' ? questions : questions.filter(q => q.topic === name);
+}
 function filtered() {
   if (mock) return mock.questions;
-  return questions.filter(q => eligible(q) && (topic === 'all' || q.topic === topic));
+  return (randomRoutes.get(topic) ?? questionsInTopic()).filter(eligible);
 }
 function shuffle(values) {
   const result = [...values];
@@ -6486,6 +6519,63 @@ function shuffle(values) {
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
+}
+function focusQuestion() {
+  ui.stem.focus({preventScroll:true});
+  ui.meta.scrollIntoView({block:'nearest'});
+}
+function openNavigator() {
+  if (!ogUnlocked || mock) return;
+  renderNavigator();
+  ui.navigatorDialog.showModal();
+}
+function renderNavigator() {
+  const pool = questionsInTopic();
+  const current = showing[index];
+  const random = randomRoutes.has(topic);
+  const counts = {correct:0, wrong:0, unanswered:0};
+  const labels = {correct:'正确', wrong:'错误', unanswered:'未答'};
+  ui.navigatorTitle.textContent = (topic === 'all' ? '全部题库' : topic) + ' · 题号导航';
+  ui.orderSequential.setAttribute('aria-pressed', !random);
+  ui.orderRandom.setAttribute('aria-pressed', random);
+  ui.navigatorStart.disabled = !pool.some(eligible);
+  ui.navigatorHint.textContent = '当前刷题顺序：' + (random ? '乱序' : '按题号') +
+    '。题号固定，点击任意题号即可跳转。开始刷题时沿用当前筛选。';
+  const tiles = pool.map((q, i) => {
+    const state = !Object.hasOwn(history, q.id) ? 'unanswered' :
+      history[q.id] === q.answer ? 'correct' : 'wrong';
+    counts[state]++;
+    const tile = makeButton(i + 1, 'number-tile', () => jumpFromNavigator(q));
+    tile.dataset.state = state;
+    tile.title = q.id + ' · ' + labels[state];
+    tile.setAttribute('aria-label', '第 ' + (i + 1) + ' 题，' + labels[state] + '，' + q.id);
+    if (q === current) tile.setAttribute('aria-current', 'true');
+    return tile;
+  });
+  ui.navigatorGrid.replaceChildren(...tiles);
+  ui.navigatorCorrect.textContent = '正确 ' + counts.correct;
+  ui.navigatorWrong.textContent = '错误 ' + counts.wrong;
+  ui.navigatorUnanswered.textContent = '未答 ' + counts.unanswered;
+}
+function changePracticeOrder(random) {
+  const current = showing[index];
+  if (random) {
+    if (!randomRoutes.has(topic)) randomRoutes.set(topic, shuffle(questionsInTopic()));
+  } else {
+    randomRoutes.delete(topic);
+  }
+  index = Math.max(0, filtered().indexOf(current));
+  render();
+}
+function jumpFromNavigator(q) {
+  if (q) {
+    if (format !== 'all' && q.format !== format) format = 'all';
+    if (wrongOnly && !eligible(q)) wrongOnly = false;
+  }
+  index = q ? Math.max(0, filtered().indexOf(q)) : 0;
+  ui.navigatorDialog.close();
+  render();
+  focusQuestion();
 }
 function toggleMock() {
   if (mock) {
@@ -6541,8 +6631,7 @@ function move(next) {
   if (next < 0 || next >= showing.length || next === index) return;
   index = next;
   render();
-  ui.stem.focus({preventScroll:true});
-  ui.meta.scrollIntoView({block:'nearest'});
+  focusQuestion();
 }
 function renderFilters() {
   const counts = questions.reduce((all, q) => {
@@ -6559,6 +6648,7 @@ function renderFilters() {
     }
   }
   ui.wrong.hidden = Boolean(mock);
+  ui.navigator.hidden = Boolean(mock);
   ui.wrong.setAttribute('aria-pressed', wrongOnly);
   ui.mock.textContent = mock ? '返回题库' : '开始 25 MCQ + 15 EMQ';
   ui.side.hidden = Boolean(mock);
@@ -6569,9 +6659,12 @@ function renderFilters() {
     const pool = questions.filter(q => eligible(q) && (name === 'all' || q.topic === name));
     const answered = pool.filter(q => Object.hasOwn(history, q.id)).length;
     const button = makeButton(name === 'all' ? '全部题库' : name,'topic',() => {
-      topic = name;
-      index = 0;
-      render();
+      if (topic !== name) {
+        topic = name;
+        index = 0;
+        render();
+      }
+      openNavigator();
     },topic === name);
     button.append(make('small',answered + '/' + pool.length));
     ui.topics.append(button);
@@ -6607,7 +6700,8 @@ function render(keepQuestion) {
   ui.bar.style.width = (answered.length * 100 / progressPool.length) + '%';
   ui.stats.textContent = '已答 ' + answered.length + '/' + progressPool.length + (mock && !mock.submitted ? '' : ' · 正确率 ' + score);
   ui.submit.hidden = !mock || mock.submitted;
-  ui.jump.replaceChildren(...showing.map((q,i) => new Option((i + 1) + ' · ' + q.id,i)));
+  const fixedNumbers = mock ? null : new Map(questionsInTopic().map((q,i) => [q, i + 1]));
+  ui.jump.replaceChildren(...showing.map((q,i) => new Option((fixedNumbers?.get(q) ?? i + 1) + ' · ' + q.id,i)));
   ui.jump.value = index;
   ui.jump.disabled = showing.length === 0;
   ui.prev.disabled = index === 0;
@@ -6620,6 +6714,7 @@ function render(keepQuestion) {
   ui.feedback.hidden = true;
   ui.lead.hidden = true;
   ui.redo.hidden = true;
+  if (ui.navigatorDialog.open) renderNavigator();
   if (!q) {
     ui.stem.textContent = wrongOnly ? '这个筛选范围暂时没有错题。' : '这个筛选范围没有题目。';
     ui.hint.textContent = '可切换题型或专题。';
@@ -6630,7 +6725,10 @@ function render(keepQuestion) {
   const review = mock ? mock.submitted && !mock.retry.has(q.id) : answeredThis;
   const locked = mock ? review : answeredThis;
   ui.redo.hidden = !answeredThis;
-  ui.meta.append(make('span', q.format,'pill'),make('span',q.topic,'pill'),make('span','第 ' + (index + 1) + ' / ' + showing.length + ' 题 · ' + q.id));
+  const location = '进度 ' + (index + 1) + ' / ' + showing.length;
+  const number = fixedNumbers ? ' · 题号 ' + fixedNumbers.get(q) : '';
+  ui.meta.append(make('span', q.format,'pill'),make('span',q.topic,'pill'),
+    make('span',location + number + ' · ' + q.id));
   if (q.group) {
     ui.lead.hidden = false;
     ui.leadTitle.textContent = q.group + ' · 病例 ' + q.item + '/5';
@@ -6718,6 +6816,10 @@ window.addEventListener('storage', event => {
 });
 ui.ogTab.onclick = () => chooseSubject('og');
 ui.paedTab.onclick = () => chooseSubject('paed');
+ui.navigator.onclick = openNavigator;
+ui.orderSequential.onclick = () => changePracticeOrder(false);
+ui.orderRandom.onclick = () => changePracticeOrder(true);
+ui.navigatorStart.onclick = () => jumpFromNavigator();
 ui.redo.onclick = redoQuestion;
 ui.prev.onclick = () => move(index - 1);
 ui.next.onclick = () => move(index + 1);
@@ -6734,7 +6836,7 @@ ui.submit.onclick = () => {
   ui.stem.focus();
 };
 document.addEventListener('keydown', event => {
-  if (subject !== 'og' || !ogUnlocked || ui.backupDialog.open || event.ctrlKey || event.altKey || event.metaKey || event.repeat || ['SELECT','INPUT','TEXTAREA'].includes(event.target.tagName)) return;
+  if (subject !== 'og' || !ogUnlocked || ui.backupDialog.open || ui.navigatorDialog.open || event.ctrlKey || event.altKey || event.metaKey || event.repeat || ['SELECT','INPUT','TEXTAREA'].includes(event.target.tagName)) return;
   const q = showing[index];
   if (!q) return;
   if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
