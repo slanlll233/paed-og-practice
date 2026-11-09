@@ -35,6 +35,18 @@ h1{font-size:clamp(1.5rem,4vw,2rem);line-height:1.25;margin:.12rem 0 .3rem;lette
 .frame{display:block;width:100%;height:calc(100dvh - 185px);min-height:580px;border:1px solid var(--line);border-radius:13px;background:white}.about{font-size:.83rem;color:var(--muted);margin-top:1.4rem}.about summary{cursor:pointer;font-weight:650}.about li{margin:.3rem 0}
 @media(max-width:770px){.layout{grid-template-columns:1fr;gap:.65rem}.side h2{margin-bottom:.3rem}.topics{display:flex;gap:.35rem;overflow-x:auto;padding:.18rem .18rem .48rem}.topic{white-space:nowrap;border-color:var(--line);background:white}.top-inner,main{width:calc(100% - 1.2rem)}}
 @media(max-width:530px){.top-inner{min-height:60px}.identity{gap:.45rem}.identity .kicker{display:none}.switch button{padding:.38rem .56rem}.options.emq{grid-template-columns:1fr}.frame{min-height:660px}.overview{gap:.5rem}}
+.access-card{max-width:560px;margin:clamp(1rem,5vw,4rem) auto}
+.access-card h1{margin:.3rem 0 .8rem}
+.access-card label,.backup-panel label{display:block;font-weight:650;margin:.8rem 0 .35rem}
+.access-card input,.backup-panel textarea{width:100%;border:1px solid var(--line);border-radius:.55rem;padding:.55rem .68rem;background:var(--paper);color:var(--ink);font:inherit}
+.access-card .controls{margin-top:.75rem}
+.form-message{min-height:1.4em;color:var(--muted);font-size:.88rem}
+.form-message[data-error="true"]{color:var(--red)}
+.backup-panel{width:min(560px,calc(100% - 1.5rem));max-height:calc(100dvh - 1.5rem);overflow:auto;border:1px solid var(--line);padding:1.25rem;color:var(--ink)}
+.backup-panel::backdrop{background:#19283a80}
+.backup-panel h2{font-size:1.2rem;margin:0}
+.backup-panel textarea{resize:vertical;min-height:5rem;font: .82rem/1.5 ui-monospace,monospace;overflow-wrap:anywhere}
+.backup-panel .controls{margin-top:.65rem}
 </style>
 <script>
 window.ogBank = {
@@ -6282,7 +6294,6 @@ window.ogBank = {
     ]
   }
 };
-
 </script>
 
 </head>
@@ -6296,10 +6307,20 @@ window.ogBank = {
   <div class="overview"><div><span class="kicker">PAEDIATRICS · FORMATIVE PRACTICE</span><h1>儿科题库</h1><p class="muted">S1–S4 · 275 题 · 按考试场次和系统模块练习</p></div><a class="button" href="https://andyxu513.github.io/pae-peds-mcq/" target="_blank" rel="noopener">新标签打开原站 ↗</a></div>
   <iframe id="paedFrame" class="frame" title="同学制作的儿科 MCQ 题库" referrerpolicy="no-referrer"></iframe>
 </section>
-<section id="og">
+<section id="ogGate" class="card access-card" aria-labelledby="gateTitle" hidden>
+  <span class="kicker">OG PRACTICE</span>
+  <h1 id="gateTitle">进入 OG 练题室</h1>
+  <form id="gateForm">
+    <label for="gateAnswer">抽插🦓群有几个群友？</label>
+    <input id="gateAnswer" type="password" inputmode="numeric" autocomplete="off" required aria-describedby="gateMessage">
+    <div class="controls"><button type="submit" class="button primary">验证并进入</button></div>
+    <p id="gateMessage" class="form-message" role="status"></p>
+  </form>
+</section>
+<section id="og" hidden>
   <div class="overview"><div><span class="kicker">MED4011 · OBSTETRICS &amp; GYNAECOLOGY</span><h1>OG 原创模拟题</h1><p id="subtitle" class="muted"></p></div>
   <div><div class="meter" aria-hidden="true"><i id="bar"></i></div><div id="stats" class="stats"></div></div></div>
-  <div class="toolbar"><div id="formats" class="controls" aria-label="题型"></div><div class="controls"><button id="wrong" class="button" aria-pressed="false">错题本</button><button id="mock" class="button primary">开始 25 MCQ + 15 EMQ</button></div></div>
+  <div class="toolbar"><div id="formats" class="controls" aria-label="题型"></div><div class="controls"><button id="wrong" class="button" aria-pressed="false">错题本</button><button id="backup" class="button">备份与恢复</button><button id="mock" class="button primary">开始 25 MCQ + 15 EMQ</button></div></div>
   <div class="layout">
     <aside class="side" id="side"><h2>课件专题</h2><nav id="topics" class="topics" aria-label="课件专题"></nav></aside>
     <div class="stage">
@@ -6311,7 +6332,7 @@ window.ogBank = {
         <div id="feedback" class="feedback" aria-live="polite" hidden></div>
       </article>
       <div class="nav"><div class="controls"><button id="prev" class="button">← 上一题</button><button id="next" class="button primary">下一题 →</button></div>
-        <div class="controls"><select id="jump" class="button" aria-label="跳转到第几题"></select><button id="submit" class="button primary" hidden>交卷并看解析</button></div>
+        <div class="controls"><button id="redo" class="button" type="button" hidden>重做本题</button><select id="jump" class="button" aria-label="跳转到第几题"></select><button id="submit" class="button primary" hidden>交卷并看解析</button></div>
       </div>
       <p class="hint" id="hint"></p>
     </div>
@@ -6322,13 +6343,27 @@ window.ogBank = {
     <li>Ten Teachers 的出版社章节目录用于对照主题覆盖。<a href="https://www.routledge.com/Obstetrics-by-Ten-Teachers/McCarthy-Kenny/p/book/9781032051161" target="_blank" rel="noopener">Obstetrics</a> · <a href="https://www.routledge.com/Gynaecology-by-Ten-Teachers/Crosbie-Morgan/p/book/9781032458045" target="_blank" rel="noopener">Gynaecology</a></li>
   </ul></details>
 </section>
+<dialog id="backupDialog" class="card backup-panel" aria-labelledby="backupTitle">
+  <h2 id="backupTitle">备份与恢复</h2>
+  <p class="muted small">备份码包含 OG 的作答、错题和当前模拟卷。把码带到另一台设备，验证进入 OG 后即可恢复。</p>
+  <label for="backupCode">本机备份码</label>
+  <textarea id="backupCode" readonly spellcheck="false" rows="3"></textarea>
+  <div class="controls"><button id="copyBackup" class="button" type="button">复制备份码</button></div>
+  <label for="restoreCode">粘贴另一台设备的备份码</label>
+  <textarea id="restoreCode" spellcheck="false" rows="3" placeholder="以 OG1. 开头"></textarea>
+  <p id="backupMessage" class="form-message" role="status"></p>
+  <div class="controls">
+    <button id="restoreBackup" class="button primary" type="button">覆盖本机记录并恢复</button>
+    <form method="dialog"><button class="button">关闭</button></form>
+  </div>
+</dialog>
 </main>
 <script>
 'use strict';
-const byId = id => document.getElementById(id);
 const ui = Object.fromEntries(Array.from(document.querySelectorAll('[id]'), element => [element.id, element]));
 const {questions, topics, references} = window.ogBank;
 const letters = 'ABCDEFGHIJ';
+const questionById = new Map(questions.map(q => [q.id, q]));
 const emqGroups = new Map();
 for (const q of questions) {
   if (q.format !== 'EMQ') continue;
@@ -6337,11 +6372,10 @@ for (const q of questions) {
 }
 const sourceUrl = 'https://andyxu513.github.io/pae-peds-mcq/';
 const storageKey = 'cuhksz-og-practice-v1';
+const gateKey = 'cuhksz-og-access-v1';
+const backupPrefix = 'OG1.';
 let history = {};
-try {
-  const saved = JSON.parse(localStorage.getItem(storageKey));
-  if (saved && typeof saved === 'object') history = saved;
-} catch {}
+let retry = new Set();
 let subject = 'og';
 let format = 'all';
 let topic = 'all';
@@ -6349,6 +6383,70 @@ let wrongOnly = false;
 let index = 0;
 let mock = null;
 let showing = [];
+let ogUnlocked = false;
+
+function validRecord(record, pool = questionById) {
+  if (!record || typeof record !== 'object' || Array.isArray(record)) return false;
+  return Object.entries(record).every(([id, answer]) => {
+    const question = pool.get(id);
+    return question && Number.isInteger(answer) && answer >= 0 && answer < question.options.length;
+  });
+}
+function validRetry(ids, answers, pool = questionById) {
+  return Array.isArray(ids) && new Set(ids).size === ids.length &&
+    ids.every(id => pool.has(id) && !Object.hasOwn(answers, id));
+}
+function readSnapshot(snapshot) {
+  if (!snapshot || snapshot.v !== 1 || !validRecord(snapshot.answers) ||
+      !validRetry(snapshot.retry, snapshot.answers)) throw new Error('Invalid progress');
+  const savedMock = snapshot.mock;
+  let restoredMock = null;
+  if (savedMock !== null) {
+    if (!savedMock || !Array.isArray(savedMock.ids) || savedMock.ids.length !== 40 ||
+        new Set(savedMock.ids).size !== 40 || typeof savedMock.submitted !== 'boolean') {
+      throw new Error('Invalid mock');
+    }
+    const items = savedMock.ids.map(id => questionById.get(id));
+    const validOrder = items.every((q, i) => q && q.format === (i < 25 ? 'MCQ' : 'EMQ') &&
+      (i < 25 || (q.item === ((i - 25) % 5) + 1 && q.group === items[i - (i - 25) % 5].group)));
+    const pool = new Map(validOrder ? items.map(q => [q.id, q]) : []);
+    if (!validOrder || !validRecord(savedMock.answers, pool) ||
+        !validRetry(savedMock.retry, savedMock.answers, pool)) throw new Error('Invalid mock');
+    restoredMock = {questions: items, answers: savedMock.answers, submitted: savedMock.submitted,
+                    retry: new Set(savedMock.retry)};
+  }
+  return {history: snapshot.answers, retry: new Set(snapshot.retry), mock: restoredMock};
+}
+function snapshotProgress() {
+  return {
+    v: 1,
+    answers: history,
+    retry: [...retry],
+    mock: mock ? {ids: mock.questions.map(q => q.id), answers: mock.answers,
+                  submitted: mock.submitted, retry: [...mock.retry]} : null
+  };
+}
+function loadProgress(raw) {
+  const saved = JSON.parse(raw);
+  if (saved?.v === 1) {
+    ({history, retry, mock} = readSnapshot(saved));
+    return;
+  }
+  // The previous version stored a flat map of question IDs to option numbers.
+  history = validRecord(saved) ? saved : {};
+  retry = new Set();
+  mock = null;
+}
+function persistProgress() {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(snapshotProgress()));
+    return true;
+  } catch {
+    return false;
+  }
+}
+try { loadProgress(localStorage.getItem(storageKey)); } catch {}
+try { ogUnlocked = localStorage.getItem(gateKey) === 'verified'; } catch {}
 
 function make(tag, value, className) {
   const element = document.createElement(tag);
@@ -6367,14 +6465,15 @@ function chooseSubject(next) {
   subject = next;
   document.body.dataset.subject = subject;
   ui.paed.hidden = subject !== 'paed';
-  ui.og.hidden = subject !== 'og';
+  ui.og.hidden = subject !== 'og' || !ogUnlocked;
+  ui.ogGate.hidden = subject !== 'og' || ogUnlocked;
   ui.paedTab.setAttribute('aria-pressed', subject === 'paed');
   ui.ogTab.setAttribute('aria-pressed', subject === 'og');
   if (subject === 'paed' && !ui.paedFrame.hasAttribute('src')) ui.paedFrame.src = sourceUrl;
 }
 function eligible(q) {
   return (format === 'all' || q.format === format) &&
-    (!wrongOnly || (Object.hasOwn(history, q.id) && history[q.id] !== q.answer));
+    (!wrongOnly || retry.has(q.id) || (Object.hasOwn(history, q.id) && history[q.id] !== q.answer));
 }
 function filtered() {
   if (mock) return mock.questions;
@@ -6403,24 +6502,40 @@ function toggleMock() {
     mock = {
       questions: [...shuffle([...balanced, extra]), ...shuffle([obs, gyn, third]).flat()],
       answers: {},
-      submitted: false
+      submitted: false,
+      retry: new Set()
     };
   }
   index = 0;
+  persistProgress();
   render();
 }
 function saveChoice(q, optionIndex) {
+  if (!ogUnlocked) return;
   if (mock) {
-    if (mock.submitted) return;
+    if (mock.submitted && !mock.retry.has(q.id)) return;
     mock.answers[q.id] = optionIndex;
+    mock.retry.delete(q.id);
   } else {
-    if (Object.hasOwn(history, q.id) && !wrongOnly) return;
+    if (Object.hasOwn(history, q.id)) return;
     history[q.id] = optionIndex;
-    try { localStorage.setItem(storageKey, JSON.stringify(history)); } catch {}
+    retry.delete(q.id);
   }
+  persistProgress();
   render(q);
   const focus = ui.options.children[optionIndex];
   if (focus) focus.focus({preventScroll:true});
+}
+function redoQuestion() {
+  const q = showing[index];
+  const answers = mock ? mock.answers : history;
+  if (!q || !Object.hasOwn(answers, q.id)) return;
+  if (mock && mock.submitted) mock.retry.add(q.id);
+  if (!mock && answers[q.id] !== q.answer) retry.add(q.id);
+  delete answers[q.id];
+  persistProgress();
+  render(q);
+  ui.options.firstElementChild?.focus({preventScroll:true});
 }
 function move(next) {
   if (next < 0 || next >= showing.length || next === index) return;
@@ -6504,6 +6619,7 @@ function render(keepQuestion) {
   ui.feedback.replaceChildren();
   ui.feedback.hidden = true;
   ui.lead.hidden = true;
+  ui.redo.hidden = true;
   if (!q) {
     ui.stem.textContent = wrongOnly ? '这个筛选范围暂时没有错题。' : '这个筛选范围没有题目。';
     ui.hint.textContent = '可切换题型或专题。';
@@ -6511,8 +6627,9 @@ function render(keepQuestion) {
   }
   const answeredThis = Object.hasOwn(answers, q.id);
   const selected = answeredThis ? answers[q.id] : -1;
-  const review = mock ? mock.submitted : answeredThis;
-  const locked = mock ? mock.submitted : answeredThis && !wrongOnly;
+  const review = mock ? mock.submitted && !mock.retry.has(q.id) : answeredThis;
+  const locked = mock ? review : answeredThis;
+  ui.redo.hidden = !answeredThis;
   ui.meta.append(make('span', q.format,'pill'),make('span',q.topic,'pill'),make('span','第 ' + (index + 1) + ' / ' + showing.length + ' 题 · ' + q.id));
   if (q.group) {
     ui.lead.hidden = false;
@@ -6537,8 +6654,71 @@ function render(keepQuestion) {
   }
   ui.hint.textContent = mock && !mock.submitted ? '可修改选项，交卷后统一显示答案与解析。' : '数字键 1–5 选答案（EMQ 可用 A–J） · 左右方向键切题';
 }
+function backupMessage(message, error = false) {
+  ui.backupMessage.textContent = message;
+  ui.backupMessage.dataset.error = error;
+}
+ui.gateForm.onsubmit = event => {
+  event.preventDefault();
+  if (ui.gateAnswer.value.trim() !== '7') {
+    ui.gateMessage.textContent = '答案不正确，请再试一次。';
+    ui.gateMessage.dataset.error = true;
+    ui.gateAnswer.select();
+    return;
+  }
+  ogUnlocked = true;
+  try { localStorage.setItem(gateKey, 'verified'); } catch {}
+  ui.gateAnswer.value = '';
+  ui.gateMessage.textContent = '';
+  chooseSubject('og');
+  render();
+  ui.stem.focus();
+};
+ui.backup.onclick = () => {
+  ui.backupCode.value = backupPrefix + btoa(JSON.stringify(snapshotProgress()));
+  ui.restoreCode.value = '';
+  backupMessage('');
+  ui.backupDialog.showModal();
+};
+ui.copyBackup.onclick = async () => {
+  try {
+    await navigator.clipboard.writeText(ui.backupCode.value);
+    backupMessage('备份码已复制。');
+  } catch {
+    ui.backupCode.focus();
+    ui.backupCode.select();
+    backupMessage('已选中备份码，请使用设备的复制功能。');
+  }
+};
+ui.restoreBackup.onclick = () => {
+  const code = ui.restoreCode.value.replace(/\s/g, '');
+  let restored;
+  try {
+    if (!code.startsWith(backupPrefix) || code.length > 30000) throw new Error('Invalid backup');
+    restored = readSnapshot(JSON.parse(atob(code.slice(backupPrefix.length))));
+  } catch {
+    backupMessage('无法读取备份码，请检查是否复制完整。', true);
+    return;
+  }
+  if ((Object.keys(history).length || retry.size || mock) &&
+      !confirm('恢复会覆盖本机的 OG 作答、错题和当前模拟卷。确定继续？')) return;
+  ({history, retry, mock} = restored);
+  const persisted = persistProgress();
+  index = 0;
+  render();
+  ui.backupCode.value = backupPrefix + btoa(JSON.stringify(snapshotProgress()));
+  backupMessage(persisted ? '记录已恢复，正确率已重新计算。' : '已恢复到本次页面，浏览器未能保存记录。', !persisted);
+};
+window.addEventListener('storage', event => {
+  if (event.key !== storageKey) return;
+  try {
+    loadProgress(event.newValue);
+    if (ogUnlocked) render();
+  } catch {}
+});
 ui.ogTab.onclick = () => chooseSubject('og');
 ui.paedTab.onclick = () => chooseSubject('paed');
+ui.redo.onclick = redoQuestion;
 ui.prev.onclick = () => move(index - 1);
 ui.next.onclick = () => move(index + 1);
 ui.jump.onchange = () => move(Number(ui.jump.value));
@@ -6548,12 +6728,13 @@ ui.submit.onclick = () => {
   const remaining = mock.questions.length - Object.keys(mock.answers).length;
   if (remaining && !confirm('还有 ' + remaining + ' 题未作答。确定交卷？')) return;
   mock.submitted = true;
+  persistProgress();
   index = 0;
   render();
   ui.stem.focus();
 };
 document.addEventListener('keydown', event => {
-  if (subject !== 'og' || event.ctrlKey || event.altKey || event.metaKey || event.repeat || ['SELECT','INPUT','TEXTAREA'].includes(event.target.tagName)) return;
+  if (subject !== 'og' || !ogUnlocked || ui.backupDialog.open || event.ctrlKey || event.altKey || event.metaKey || event.repeat || ['SELECT','INPUT','TEXTAREA'].includes(event.target.tagName)) return;
   const q = showing[index];
   if (!q) return;
   if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
@@ -6565,8 +6746,8 @@ document.addEventListener('keydown', event => {
   const option = /^[1-5]$/.test(key) ? Number(key)-1 : key.length === 1 ? letters.indexOf(key) : -1;
   if (option >= 0 && option < q.options.length) saveChoice(q,option);
 });
-render();
-
+chooseSubject('og');
+if (ogUnlocked) render();
 </script>
 </body>
 </html>
