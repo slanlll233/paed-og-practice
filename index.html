@@ -60,6 +60,7 @@ h1{font-size:clamp(1.5rem,4vw,2rem);line-height:1.25;margin:.12rem 0 .3rem;lette
 .navigator-legend{display:flex;gap:.4rem;flex-wrap:wrap;margin:.65rem 0 0;font-size:.8rem}
 .navigator-legend span{border:1px solid #a8b7c6;padding:.15rem .5rem;border-radius:999px;background:#fff}
 @media(max-width:530px){.navigator-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.og-banks{margin-bottom:16px}#cohortRecall{max-width:850px}#recallCase{max-width:100%}.recall-question{border-top:1px solid #dce3ec;padding:16px 0}.recall-question label{display:block;font-weight:650}.recall-question textarea{display:block;width:100%;box-sizing:border-box;margin:8px 0 12px;padding:10px;border:1px solid #a7b3c4;border-radius:8px;font:inherit;resize:vertical}
 </style>
 <script>
 window.ogBank = {
@@ -6331,6 +6332,8 @@ window.ogBank = {
   </form>
 </section>
 <section id="og" hidden>
+<nav class="controls og-banks" aria-label="OG 题库"><button id="practiceTab" class="button" type="button" aria-pressed="true">原创模拟题</button><button id="recallTab" class="button" type="button" aria-pressed="false">Cohort Recall</button></nav>
+<div id="ogPractice">
   <div class="overview"><div><span class="kicker">MED4011 · OBSTETRICS &amp; GYNAECOLOGY</span><h1>OG 原创模拟题</h1><p id="subtitle" class="muted"></p></div>
   <div><div class="meter" aria-hidden="true"><i id="bar"></i></div><div id="stats" class="stats"></div></div></div>
   <div class="toolbar"><div id="formats" class="controls" aria-label="题型"></div><div class="controls"><button id="wrong" class="button" aria-pressed="false">错题本</button><button id="navigator" class="button" type="button" aria-haspopup="dialog">题号导航</button><button id="backup" class="button">备份与恢复</button><button id="mock" class="button primary">开始 25 MCQ + 15 EMQ</button></div></div>
@@ -6355,6 +6358,13 @@ window.ogBank = {
     <li>每道题附相关课件或复习笔记定位。CU MED Made Easy 用于核对相应专题。</li>
     <li>Ten Teachers 的出版社章节目录用于对照主题覆盖。<a href="https://www.routledge.com/Obstetrics-by-Ten-Teachers/McCarthy-Kenny/p/book/9781032051161" target="_blank" rel="noopener">Obstetrics</a> · <a href="https://www.routledge.com/Gynaecology-by-Ten-Teachers/Crosbie-Morgan/p/book/9781032458045" target="_blank" rel="noopener">Gynaecology</a></li>
   </ul></details>
+</div>
+<section id="cohortRecall" class="card" hidden aria-labelledby="recallTitle">
+<h2 id="recallTitle" tabindex="-1">Cohort Recall</h2>
+<p class="muted">去年 OG Final 回忆整理 · 9 组病例 · 22 道 SAQ</p>
+<p>缺失的题干和设问已重构。OSCE 和 viva 考点改编成书面 SAQ。作答保存在本机浏览器，提交后可对照参考要点自评。</p>
+<label for="recallCase">选择病例</label> <select id="recallCase" class="button"></select>
+<div id="recallQuestions"></div></section>
 </section>
 <dialog id="navigatorDialog" class="card backup-panel navigator-panel" aria-labelledby="navigatorTitle">
   <div class="navigator-top">
@@ -6836,7 +6846,7 @@ ui.submit.onclick = () => {
   ui.stem.focus();
 };
 document.addEventListener('keydown', event => {
-  if (subject !== 'og' || !ogUnlocked || ui.backupDialog.open || ui.navigatorDialog.open || event.ctrlKey || event.altKey || event.metaKey || event.repeat || ['SELECT','INPUT','TEXTAREA'].includes(event.target.tagName)) return;
+  if (subject !== 'og' || !ogUnlocked || !ui.cohortRecall.hidden || ui.backupDialog.open || ui.navigatorDialog.open || event.ctrlKey || event.altKey || event.metaKey || event.repeat || ['SELECT','INPUT','TEXTAREA'].includes(event.target.tagName)) return;
   const q = showing[index];
   if (!q) return;
   if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
@@ -6848,6 +6858,259 @@ document.addEventListener('keydown', event => {
   const option = /^[1-5]$/.test(key) ? Number(key)-1 : key.length === 1 ? letters.indexOf(key) : -1;
   if (option >= 0 && option < q.options.length) saveChoice(q,option);
 });
+const recallCases = [
+  [
+    "SAQ 1",
+    "Pelvic organ prolapse",
+    "A 60-year-old woman has a vaginal bulge. The cervix and anterior vaginal wall descend beyond the introitus on straining.",
+    "https://www.nice.org.uk/guidance/ng123/chapter/Recommendations",
+    [
+      [
+        "Name the structure grasped at the external os, the surface of the broad anterior bulge, the organ beneath it, the recess between the cervix and the anterior vaginal wall, and the distal prolapse involving the urethra.",
+        "宫颈、阴道前壁、膀胱、阴道前穹窿、尿道膨出（urethrocele）。回忆稿提到另有一处圈出的动脉，附图没有对应标记。"
+      ],
+      [
+        "List three associated urinary symptoms.",
+        "例如压力性漏尿、尿急、排尿不尽。也可见尿频、尿流缓慢或需手托脱垂才能排尿。"
+      ],
+      [
+        "She has dysuria and incomplete emptying. How would you investigate?",
+        "尿试纸、中段尿培养和药敏。用膀胱超声量排尿后残余尿。"
+      ],
+      [
+        "She has no urinary symptoms but wants surgery for bothersome uterine and anterior prolapse. Give one vaginal operation and a point to discuss about continence.",
+        "可考虑阴式子宫切除加顶端支持和前壁修补，并讨论保留子宫的选项。告知术后可能出现压力性尿失禁，通常不常规加预防性尿失禁手术。"
+      ]
+    ]
+  ],
+  [
+    "SAQ 2",
+    "Twin pregnancy and TTTS",
+    "A 28-year-old para 1 attends at 11 weeks. Twin crown–rump lengths are 39 and 42 mm.",
+    "https://www.isuog.org/resource/isuog-practice-guidelines-role-of-ultrasound-in-twin-pregnancy-pdf.html",
+    [
+      [
+        "How do you distinguish DCDA from MCDA on first-trimester ultrasound? Can CRL establish chorionicity?",
+        "DCDA 常见 lambda sign 和较厚隔膜。MCDA 常见薄隔膜和 T sign。结合胎盘及隔膜判断，CRL 无法确定绒毛膜性。"
+      ],
+      [
+        "For MCDA twins, when should TTTS surveillance start and what should it assess?",
+        "16 周起至少每两周一次超声。分别测最深羊水池，观察两胎膀胱，结合 Doppler 和其他所见分期。"
+      ],
+      [
+        "At 19 weeks the donor pocket measures 1 cm and the recipient pocket 10 cm. The donor bladder is not seen. Dopplers are normal and there is no hydrops. Diagnose, stage and give definitive treatment.",
+        "Quintero II 期 TTTS。转介胎儿治疗中心行胎儿镜下胎盘交通血管激光凝固。"
+      ],
+      [
+        "At 29 weeks her BP is repeatedly 152/96 mmHg and she has a persistent headache. How would you evaluate for pre-eclampsia?",
+        "紧急评估，复测血压，询问视觉症状和上腹痛，量化尿蛋白，查血常规、血小板及肝肾功能，并评估胎儿生长和状况。尿 PCR ≥30 mg/mmol 支持显著蛋白尿。",
+        "https://www.nice.org.uk/guidance/ng133/chapter/recommendations"
+      ]
+    ]
+  ],
+  [
+    "SAQ 3",
+    "PCOS and subfertility",
+    "A woman with irregular menses and a BMI of 36 kg/m² has tried to conceive for four years. Ultrasound describes polycystic ovarian morphology.",
+    "https://www.asrm.org/practice-guidance/practice-committee-documents/recommendations-from-the-2023-international-evidence-based-guideline-for-the-assessment-and-management-of-polyendocrine-metabolic-ovarian-syndrome-2023",
+    [
+      [
+        "Give the most likely diagnosis, adult criteria and alternative diagnoses to exclude.",
+        "排除其他病因后，排卵障碍、高雄激素及多囊卵巢形态三项中符合两项可诊断 PCOS。考虑排除妊娠、甲状腺异常、高泌乳素和非经典型 CAH。"
+      ],
+      [
+        "What should be assessed before ovulation induction?",
+        "评估排卵、精液和按风险评估输卵管通畅；检查血压、糖代谢并回顾用药和孕前风险。"
+      ],
+      [
+        "Outline preconception care and name the preferred first-line drug for isolated anovulatory infertility.",
+        "讨论饮食、运动、可持续体重管理及叶酸。无其他不孕因素时首选 letrozole，开始前排除妊娠。"
+      ]
+    ]
+  ],
+  [
+    "SAQ 4",
+    "Gestational diabetes",
+    "A 40-year-old primigravida at 28 weeks has a fundal height of 32 cm. Fetal HC and FL are at the 90th centile, AC at the 97th centile and AFI is 29 cm.",
+    "https://www.nice.org.uk/guidance/ng3/chapter/recommendations",
+    [
+      [
+        "What maternal diagnosis should you investigate? Give the test and its NICE thresholds.",
+        "GDM。75 g OGTT，NICE 空腹 ≥5.6 或 2 小时 ≥7.8 mmol/L，任一达标即诊断。"
+      ],
+      [
+        "Explain fetal overgrowth, polyhydramnios and neonatal hypoglycaemia.",
+        "母体高血糖导致胎儿高血糖及高胰岛素，促进生长，并可因渗透性利尿造成羊水过多。出生后母体葡萄糖供应中断，新生儿高胰岛素仍持续，容易低血糖。"
+      ],
+      [
+        "Outline antenatal management and two newborn priorities.",
+        "饮食、活动、监测血糖及胎儿生长，按血糖和当地方案加药，安排产后糖代谢复查。新生儿尽早喂养并按方案测血糖。"
+      ]
+    ]
+  ],
+  [
+    "OSCE 1 → SAQ",
+    "Down syndrome counselling",
+    "A 33-year-old at 12 weeks is concerned because her cousin has had a baby with Down syndrome.",
+    "https://www.acog.org/womens-health/faqs/prenatal-genetic-screening-tests",
+    [
+      [
+        "Compare combined screening and NIPT. What should follow a high-risk NIPT?",
+        "联合筛查结合母龄、NT、PAPP-A 和游离 β-hCG。NIPT 分析母血中的胎盘来源游离 DNA。高风险结果后提供遗传咨询及诊断性 CVS 或羊膜穿刺。"
+      ],
+      [
+        "Name three associated problems and one family detail relevant to counselling.",
+        "先心病、发育迟缓、甲状腺功能异常等。问表亲孩子的核型，特别是有无 Robertsonian 易位。"
+      ]
+    ]
+  ],
+  [
+    "OSCE 2 / DI viva → SAQ",
+    "Preterm birth and PPROM",
+    "A 27-year-old G2P1 attends at 21 weeks. She had a spontaneous vaginal birth at 30 weeks in her previous pregnancy. The recall mentions GBS pneumonia around that birth.",
+    "https://www.nice.org.uk/guidance/ng25/chapter/recommendations",
+    [
+      [
+        "How would you assess recurrent preterm birth risk and clarify the GBS history?",
+        "确认既往早产和胎膜破裂史，16–24 周经阴道测宫颈长度。既往自发早产且宫颈 ≤25 mm 时讨论阴道孕酮或环扎。澄清是否为既往新生儿侵袭性 GBS 感染，以决定产时预防。"
+      ],
+      [
+        "At 30 weeks she reports watery loss before labour. How would you investigate and manage suspected PPROM?",
+        "无菌窥器观察羊水池，未见时可按方案检测 PAMG-1 或 IGFBP-1。评估感染、宫缩及胎儿状况。稳定时按方案期待管理、潜伏期抗生素和促肺成熟，近期可能分娩时按孕周考虑 MgSO₄。有感染或胎儿受损应及时分娩。"
+      ]
+    ]
+  ],
+  [
+    "OSCE 3 → SAQ",
+    "Postmenopausal bleeding",
+    "A 60-year-old who reached menopause at 50 reports three months of persistent vaginal bleeding.",
+    "https://doi.org/10.1097/AOG.0000000000006275",
+    [
+      [
+        "Outline assessment and investigations. What if bleeding persists despite a thin endometrium?",
+        "问出血、用药及肿瘤危险因素，做窥器和盆腔检查。经阴道超声和内膜取样。持续出血即使内膜薄也需进一步评估，必要时宫腔镜和定向活检。"
+      ]
+    ]
+  ],
+  [
+    "OSCE 4 → SAQ",
+    "Open myomectomy",
+    "A 30-year-old has persistent heavy menstrual bleeding. Her haemoglobin previously fell to 80 g/L. Ultrasound shows two anterior intramural fibroids, 7 and 5 cm.",
+    "https://www.acog.org/womens-health/faqs/uterine-fibroids",
+    [
+      [
+        "Explain open myomectomy, alternatives and material risks in plain language, including future pregnancy implications.",
+        "全麻下开腹切除肌瘤并修补子宫，改善出血并保留子宫。按生育意愿讨论药物、其他手术途径和子宫切除等。说明出血和输血、感染、脏器损伤、粘连、复发及少数需紧急子宫切除。未来分娩方式依据手术记录和切口讨论。"
+      ]
+    ]
+  ],
+  [
+    "CCE OSCE → SAQ",
+    "Term bleeding and shoulder dystocia",
+    "At 37 weeks a woman reports blood-stained discharge. A previously low-lying placenta has cleared the cervix. Ultrasound suggests fetal macrosomia.",
+    "https://www.rcog.org.uk/guidance/browse-all-guidance/green-top-guidelines/shoulder-dystocia-green-top-guideline-no-42/",
+    [
+      [
+        "How would you assess the bleeding and prepare for birth?",
+        "评估出血、疼痛、母体生命体征及胎儿状态，核对胎盘定位。前置胎盘排除前避免指检。按严重程度查血常规及备血，结合母胎情况及估重讨论分娩计划。"
+      ],
+      [
+        "The head delivers but the shoulders do not follow with gentle traction. What do you do?",
+        "呼救并计时，避免宫底加压和过度牵拉。先 McRoberts 体位和耻骨上加压，未解除时按情况娩后臂、内旋或四肢着地。娩出后评估母婴损伤。"
+      ]
+    ]
+  ]
+];
+const recallKey = 'cuhksz-og-cohort-recall-v1';
+let recallAnswers = {};
+try { recallAnswers = JSON.parse(localStorage.getItem(recallKey)) ?? {}; } catch {}
+function renderRecall() {
+  const caseIndex = Number(ui.recallCase.value);
+  const [origin, title, stem, reference, parts] = recallCases[caseIndex];
+  ui.recallQuestions.replaceChildren(make('p', origin + ' · SAQ', 'kicker'), make('h3', title), make('p', stem));
+  parts.forEach(([prompt, answer, source = reference], i) => {
+    const id = 'recall-' + (caseIndex + 1) + '-' + (i + 1);
+    const state = recallAnswers[id] ?? {text: '', submitted: false};
+    const form = make('form', null, 'recall-question');
+    const label = make('label', String.fromCharCode(65 + i) + '. ' + prompt);
+    const field = make('textarea');
+    label.htmlFor = field.id = id;
+    field.rows = 4;
+    field.maxLength = 6000;
+    field.placeholder = 'Type your answer here';
+    field.required = true;
+    field.value = state.text;
+    const submit = make('button', '提交并看参考要点', 'button primary');
+    submit.type = 'submit';
+    const redo = makeButton('重做本题', 'button', () => {
+      field.value = '';
+      save(false);
+      show(false);
+      field.focus();
+    });
+    const status = make('p', '', 'small muted');
+    status.setAttribute('role', 'status');
+    const feedback = make('div', null, 'feedback');
+    feedback.tabIndex = -1;
+    const link = make('a', '参考指南');
+    link.href = source;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    feedback.append(make('strong', '参考要点 · 自评'), make('p', answer), link);
+    function save(submitted) {
+      recallAnswers[id] = {text: field.value, submitted};
+      try {
+        localStorage.setItem(recallKey, JSON.stringify(recallAnswers));
+        status.textContent = '';
+      } catch {
+        status.textContent = '浏览器未能保存作答。';
+      }
+    }
+    function show(submitted) {
+      field.readOnly = submitted;
+      feedback.hidden = !submitted;
+      submit.hidden = submitted;
+      redo.hidden = !submitted;
+    }
+    field.oninput = () => {
+      field.setCustomValidity('');
+      save(false);
+    };
+    form.onsubmit = event => {
+      event.preventDefault();
+      if (!field.value.trim()) {
+        field.setCustomValidity('请输入答案。');
+        field.reportValidity();
+        return;
+      }
+      save(true);
+      show(true);
+      feedback.focus();
+    };
+    show(state.submitted);
+    form.append(label, field, submit, redo, status, feedback);
+    ui.recallQuestions.append(form);
+  });
+}
+function chooseOgBank(recall) {
+  ui.cohortRecall.hidden = !recall;
+  ui.ogPractice.hidden = recall;
+  ui.recallTab.setAttribute('aria-pressed', recall);
+  ui.practiceTab.setAttribute('aria-pressed', !recall);
+  if (recall) {
+    renderRecall();
+    ui.recallTitle.focus();
+  }
+}
+recallCases.forEach(([origin, title], index) => {
+  const option = make('option', (index + 1) + '. ' + title + ' · ' + origin);
+  option.value = index;
+  ui.recallCase.append(option);
+});
+ui.recallCase.onchange = renderRecall;
+ui.recallTab.onclick = () => chooseOgBank(true);
+ui.practiceTab.onclick = () => chooseOgBank(false);
+
 chooseSubject('og');
 if (ogUnlocked) render();
 </script>
